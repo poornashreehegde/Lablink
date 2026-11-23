@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}GenAI Campus Equipment Advisor — LabLink{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-4xl mx-auto">
+
+    <!-- Header -->
+    <div class="text-center space-y-3">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-semibold">
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-400 animate-pulse"></i>
+            <span>Natural Language Equipment Matcher</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            GenAI Laboratory Equipment Advisor
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+            Not sure what instruments or development kits your project requires? Describe your abstract or experiments and our GenAI advisor will match campus facilities.
+        </p>
+    </div>
+
+    <!-- Search Form -->
+    <form method="POST" action="{{ url_for('ai_advisor') }}" class="glass-card rounded-3xl p-6 md:p-8 space-y-4 shadow-xl">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            Describe Your Project Abstract or Technical Needs
+        </label>
+        
+        <div class="relative">
+            <textarea name="query" rows="3" required placeholder="e.g., We are building an autonomous drone telemetry system that requires high-frequency signal integrity verification up to 4 GHz and FPGA hardware acceleration..." class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700/80 rounded-2xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 leading-relaxed font-sans">{{ query }}</textarea>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+            <!-- Sample Prompts -->
+            <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+                <span class="text-slate-500">Try:</span>
+                <button type="button" onclick="setQuery('Training a YOLO vision transformer for edge robotics')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 transition-colors">
+                    Edge Robotics
+                </button>
+                <button type="button" onclick="setQuery('Debugging 2.4 GHz RF waveform noise and impedance')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 transition-colors">
+                    RF Oscilloscope
+                </button>
+                <button type="button" onclick="setQuery('Rapid 3D prototype enclosure with carbon fiber PLA')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 transition-colors">
+                    3D Printing
+                </button>
+            </div>
+
+            <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
+                <span>Find Matched Hardware</span>
+            </button>
+        </div>
+    </form>
+
+    <!-- Recommendations Output -->
+    {% if recommendations %}
+        <div class="space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-base font-bold text-white flex items-center gap-2">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+                    <span>GenAI Matched Facilities ({{ recommendations|length }})</span>
+                </h2>
+                <span class="text-xs text-slate-400">Ranked by Spec Relevance</span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                {% for r in recommendations %}
+                    {% set eq = r.equipment %}
+                    <div class="glass-card rounded-2xl p-5 md:p-6 space-y-4 border border-indigo-500/20 hover:border-indigo-500/40 transition-all">
+                        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="text-[10px] font-mono font-bold text-indigo-400 bg-slate-800 px-2 py-0.5 rounded">{{ eq.code }}</span>
+                                    <span class="text-xs text-slate-400">{{ eq.department_name }}</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                        {{ eq.status }}
+                                    </span>
+                                </div>
+                                <h3 class="text-base font-bold text-white">{{ eq.name }}</h3>
+                                <p class="text-xs text-slate-400 flex items-center gap-1.5">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-500"></i>
+                                    {{ eq.lab_name }} &bull; {{ eq.location }}
+                                </p>
+                            </div>
+
+                            <!-- Confidence Meter -->
+                            <div class="text-left sm:text-right">
+                                <span class="text-xl font-extrabold text-emerald-400 font-mono">{{ r.confidence }}%</span>
+                                <span class="text-[10px] text-slate-400 block font-semibold uppercase">Match Score</span>
+                            </div>
+                        </div>
+
+                        <!-- Match Rationale -->
+                        <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 space-y-1">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400 block">AI Match Rationale</span>
+                            <p class="leading-relaxed">{{ r.rationale }}</p>
+                        </div>
+
+                        <!-- Specs Excerpt -->
+                        <div class="text-[11px] text-slate-400 font-mono bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
+                            <strong>Hardware Specs:</strong> {{ eq.specs }}
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-xs">
+                            <span class="text-slate-400">
+                                Lab In-Charge: <strong>{{ eq.faculty_in_charge }}</strong>
+                            </span>
+
+                            <div class="flex items-center gap-2">
+                                <a href="{{ url_for('equipment_detail', equipment_id=eq.id) }}" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition-colors">
+                                    View Full Specs
+                                </a>
+                                <a href="{{ url_for('book_equipment', equipment_id=eq.id) }}" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-md shadow-indigo-600/30 transition-all">
+                                    Book This Slot &rarr;
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% elif query %}
+        <div class="text-center py-12 bg-slate-900/40 rounded-3xl border border-slate-800">
+            <i data-lucide="search-x" class="w-10 h-10 text-slate-600 mx-auto mb-2"></i>
+            <h3 class="text-sm font-bold text-white">No Equipment Matches Found</h3>
+            <p class="text-xs text-slate-400 mt-1">Try rewording your project requirements or mentioning specific technical domains (e.g. AI, FPGA, RF, 3D printing, Spectroscopy).</p>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function setQuery(text) {
+        document.querySelector('textarea[name="query"]').value = text;
+    }
+</script>
+{% endblock %}

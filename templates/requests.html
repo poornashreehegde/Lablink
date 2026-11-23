@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Track Lab Access Requests — LabLink{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight">Resource Access & Booking Requests</h1>
+            <p class="text-xs text-slate-400">Track real-time approval status, GenAI priority scores, and scheduling conflict resolutions</p>
+        </div>
+
+        <a href="{{ url_for('index') }}#catalog" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all self-start">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>New Request</span>
+        </a>
+    </div>
+
+    <!-- Status Filter Pills -->
+    <div class="flex items-center gap-2 border-b border-slate-800 pb-3 text-xs">
+        <a href="{{ url_for('view_requests') }}" class="px-3 py-1.5 rounded-lg font-medium transition-all {% if not status_filter %}bg-indigo-600 text-white shadow-sm{% else %}text-slate-400 hover:text-white hover:bg-slate-900{% endif %}">
+            All Requests ({{ bookings|length }})
+        </a>
+        <a href="{{ url_for('view_requests', status='Pending') }}" class="px-3 py-1.5 rounded-lg font-medium transition-all {% if status_filter == 'Pending' %}bg-indigo-600 text-white shadow-sm{% else %}text-slate-400 hover:text-white hover:bg-slate-900{% endif %}">
+            Pending Approval
+        </a>
+        <a href="{{ url_for('view_requests', status='Approved') }}" class="px-3 py-1.5 rounded-lg font-medium transition-all {% if status_filter == 'Approved' %}bg-indigo-600 text-white shadow-sm{% else %}text-slate-400 hover:text-white hover:bg-slate-900{% endif %}">
+            Approved
+        </a>
+        <a href="{{ url_for('view_requests', status='Rejected') }}" class="px-3 py-1.5 rounded-lg font-medium transition-all {% if status_filter == 'Rejected' %}bg-indigo-600 text-white shadow-sm{% else %}text-slate-400 hover:text-white hover:bg-slate-900{% endif %}">
+            Rejected
+        </a>
+    </div>
+
+    <!-- Bookings List -->
+    {% if bookings %}
+        <div class="space-y-4">
+            {% for b in bookings %}
+                <div class="glass-card rounded-2xl p-5 md:p-6 space-y-4 transition-all hover:border-slate-700">
+                    
+                    <!-- Top Bar: Equipment, Date, Status -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-indigo-400">
+                                <i data-lucide="cpu" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-mono text-indigo-400 font-semibold">{{ b.equipment_ref.code }}</span>
+                                    <span class="text-slate-500 text-xs">&bull;</span>
+                                    <span class="text-xs text-slate-400">{{ b.equipment_ref.department_name }}</span>
+                                </div>
+                                <h3 class="text-sm font-bold text-white">{{ b.equipment_ref.name }}</h3>
+                            </div>
+                        </div>
+
+                        <!-- Status Badge & Date -->
+                        <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-1.5">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold {% if b.status == 'Approved' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% elif b.status == 'Pending' %}bg-amber-500/10 text-amber-400 border border-amber-500/20{% else %}bg-rose-500/10 text-rose-400 border border-rose-500/20{% endif %}">
+                                {{ b.status }}
+                            </span>
+                            <span class="text-xs text-slate-400 font-mono">
+                                Slot: {{ b.booking_date.strftime('%b %d, %Y') }} ({{ b.start_time }} - {{ b.end_time }})
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Project Info & Student -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                        <div class="md:col-span-2 space-y-1.5">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Project Scope</span>
+                            <h4 class="text-xs font-bold text-slate-100">{{ b.project_title }}</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed italic">"{{ b.purpose }}"</p>
+                            <div class="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-400">
+                                <span><strong>Category:</strong> {{ b.project_category }}</span>
+                                <span>&bull;</span>
+                                <span><strong>Deadline:</strong> <span class="text-amber-300 font-semibold">{{ b.project_deadline.strftime('%b %d, %Y') }}</span></span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1 text-[11px] text-slate-300">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Requester</span>
+                            <p class="font-bold text-white">{{ b.student_name }}</p>
+                            <p class="text-slate-400 font-mono">{{ b.student_id }}</p>
+                            <p class="text-slate-400">{{ b.student_dept }}</p>
+                        </div>
+                    </div>
+
+                    <!-- GenAI Priority Score & Evaluation Banner -->
+                    <div class="p-3.5 rounded-xl bg-gradient-to-r from-indigo-950/50 to-slate-900 border border-indigo-500/20 space-y-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="brain-circuit" class="w-4 h-4 text-indigo-400"></i>
+                                <span class="text-xs font-bold text-white">GenAI Priority Score:</span>
+                                <span class="text-xs font-mono font-bold text-indigo-300 px-2 py-0.5 rounded bg-indigo-500/20">
+                                    {{ b.priority_score }} / 100
+                                </span>
+                                <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded {% if b.priority_tier == 'Critical Urgency' %}bg-rose-500/20 text-rose-300{% elif b.priority_tier == 'High Priority' %}bg-amber-500/20 text-amber-300{% else %}bg-indigo-500/20 text-indigo-300{% endif %}">
+                                    {{ b.priority_tier }}
+                                </span>
+                            </div>
+                            <span class="text-[10px] text-slate-400">{{ b.created_at.strftime('%b %d, %I:%M %p') }}</span>
+                        </div>
+
+                        {% if b.priority_breakdown %}
+                            <p class="text-[11px] text-slate-400 leading-relaxed font-mono">
+                                <strong>Scoring Factors:</strong> {{ b.priority_breakdown }}
+                            </p>
+                        {% endif %}
+
+                        {% if b.ai_recommendation %}
+                            <div class="mt-2 p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300">
+                                <strong>AI Recommendation:</strong> {{ b.ai_recommendation }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Scheduling Conflict Banner if Detected -->
+                    {% if b.conflict_detected %}
+                        <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 space-y-2">
+                            <div class="flex items-center gap-2 text-xs font-bold">
+                                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+                                <span>Scheduling Conflict Detected with Competing Request</span>
+                            </div>
+                            <p class="text-[11px] leading-relaxed">
+                                Another research team requested an overlapping time window. The GenAI conflict resolution engine evaluated both projects based on submission deadlines and research tiers.
+                            </p>
+                            {% if b.ai_alternative_slot %}
+                                <div class="text-[11px] font-semibold text-white bg-amber-500/20 px-3 py-1.5 rounded-lg inline-block">
+                                    Recommended Alternate Slot: {{ b.ai_alternative_slot }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Faculty Decision Note -->
+                    {% if b.faculty_comments %}
+                        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 flex items-start gap-2.5">
+                            <i data-lucide="message-square" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+                            <div>
+                                <span class="font-bold text-white block">Faculty / Admin Note:</span>
+                                <span class="text-slate-400">{{ b.faculty_comments }}</span>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-16 bg-slate-900/40 rounded-3xl border border-slate-800">
+            <i data-lucide="inbox" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
+            <h3 class="text-base font-bold text-white">No Requests Found</h3>
+            <p class="text-xs text-slate-400 mt-1">You haven't submitted any equipment booking requests yet.</p>
+            <a href="{{ url_for('index') }}#catalog" class="mt-4 inline-block px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold">
+                Explore Equipment & Book
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}LabLink — Discover Specialized Campus Lab Equipment{% endblock %}
+
+{% block content %}
+<div class="space-y-10">
+
+    <!-- Hero Section -->
+    <section class="relative rounded-3xl overflow-hidden border border-slate-800/80 bg-gradient-to-b from-slate-900/90 via-[#0d1424] to-[#0b0f19] p-8 md:p-12 shadow-2xl">
+        <!-- Background Ambient Glow -->
+        <div class="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 max-w-3xl space-y-5">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>GenAI-Powered Campus Lab Democratization</span>
+            </div>
+
+            <h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15]">
+                Discover & Access <span class="bg-gradient-to-r from-indigo-400 via-violet-300 to-indigo-200 bg-clip-text text-transparent">Specialized Lab Equipment</span> Across All Departments
+            </h1>
+
+            <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-normal">
+                Break interdisciplinary silos. Book GPU workstations, FPGA kits, RF oscilloscopes, industrial 3D printers, and molecular analysis stations with automated <strong>GenAI Fair Scheduling</strong> that resolves conflicts based on project deadlines.
+            </p>
+
+            <!-- Quick Stats in Hero -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-800/80 text-left">
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span class="text-xs text-slate-400 block">Shared Equipment</span>
+                    <span class="text-xl font-bold text-white">{{ total_equipment }} Units</span>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span class="text-xs text-slate-400 block">Ready to Book</span>
+                    <span class="text-xl font-bold text-emerald-400">{{ available_equipment }} Available</span>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span class="text-xs text-slate-400 block">Cross-Dept Sharing</span>
+                    <span class="text-xl font-bold text-indigo-400">{{ cross_share_pct }}%</span>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span class="text-xs text-slate-400 block">Approved Sessions</span>
+                    <span class="text-xl font-bold text-violet-400">{{ total_approved_bookings }} Bookings</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Search & Filter Bar Section -->
+    <section id="catalog" class="space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-bold text-white tracking-tight">Campus Equipment Catalog</h2>
+                <p class="text-xs text-slate-400">Filter by department, category, or real-time availability status</p>
+            </div>
+
+            <!-- AI Quick Advisor Trigger -->
+            <a href="{{ url_for('ai_advisor') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-indigo-900/40 to-slate-900 border border-indigo-500/30 text-indigo-300 hover:border-indigo-400 transition-all">
+                <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+                <span>Can't find what you need? Ask AI Advisor</span>
+            </a>
+        </div>
+
+        <!-- Filter Form -->
+        <form method="GET" action="{{ url_for('index') }}#catalog" class="p-4 rounded-2xl glass-card border border-slate-800/90 shadow-lg space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <!-- Search Keyword -->
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search by name, specs, or room..." class="w-full pl-9 pr-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <!-- Department Dropdown -->
+                <div>
+                    <select name="dept" class="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="">All Departments</option>
+                        {% for d in departments %}
+                            <option value="{{ d.name }}" {% if selected_dept == d.name %}selected{% endif %}>{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Category Dropdown -->
+                <div>
+                    <select name="cat" class="w-full px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="">All Categories</option>
+                        {% for c in categories %}
+                            <option value="{{ c }}" {% if selected_cat == c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Status Filter & Submit -->
+                <div class="flex gap-2">
+                    <select name="status" class="flex-1 px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="">Any Status</option>
+                        <option value="Available" {% if selected_status == 'Available' %}selected{% endif %}>Available Only</option>
+                        <option value="Busy" {% if selected_status == 'Busy' %}selected{% endif %}>Busy / In Use</option>
+                    </select>
+
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5">
+                        <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                        Filter
+                    </button>
+                    {% if search_query or selected_dept or selected_cat or selected_status %}
+                        <a href="{{ url_for('index') }}#catalog" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors flex items-center justify-center">
+                            Reset
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+
+        <!-- Department Quick Pills -->
+        <div class="flex flex-wrap gap-2 pt-2">
+            <a href="{{ url_for('index') }}#catalog" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all {% if not selected_dept %}bg-indigo-600 text-white shadow-md shadow-indigo-600/30{% else %}bg-slate-900/70 text-slate-400 hover:text-white border border-slate-800{% endif %}">
+                All Departments ({{ total_equipment }})
+            </a>
+            {% for d in departments %}
+                <a href="{{ url_for('index', dept=d.name) }}#catalog" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all {% if selected_dept == d.name %}bg-indigo-600 text-white shadow-md shadow-indigo-600/30{% else %}bg-slate-900/70 text-slate-400 hover:text-white border border-slate-800{% endif %}">
+                    {{ d.code }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <!-- Equipment Grid -->
+        {% if equipments %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+                {% for eq in equipments %}
+                    <div class="glass-card rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 group">
+                        <div class="space-y-4">
+                            <!-- Header Row: Category & Status -->
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                    {{ eq.category }}
+                                </span>
+                                
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold {% if eq.status == 'Available' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}bg-amber-500/10 text-amber-400 border border-amber-500/20{% endif %}">
+                                    <span class="w-1.5 h-1.5 rounded-full {% if eq.status == 'Available' %}bg-emerald-400 animate-pulse{% else %}bg-amber-400{% endif %}"></span>
+                                    {{ eq.status }}
+                                </span>
+                            </div>
+
+                            <!-- Title & Code -->
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] font-mono text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">{{ eq.code }}</span>
+                                    <span class="text-xs text-indigo-300 font-medium">{{ eq.department_name }}</span>
+                                </div>
+                                <h3 class="text-base font-bold text-white mt-1 group-hover:text-indigo-300 transition-colors">
+                                    {{ eq.name }}
+                                </h3>
+                                <p class="text-xs text-slate-400 flex items-center gap-1.5 mt-1">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-500"></i>
+                                    {{ eq.lab_name }} &bull; {{ eq.location }}
+                                </p>
+                            </div>
+
+                            <!-- Specs Snippet -->
+                            <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-800/80">
+                                <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Hardware Specifications</span>
+                                <p class="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+                                    {{ eq.specs }}
+                                </p>
+                            </div>
+
+                            <!-- Faculty in charge -->
+                            <div class="text-[11px] text-slate-400 flex items-center justify-between border-t border-slate-800/60 pt-3">
+                                <span class="flex items-center gap-1">
+                                    <i data-lucide="user" class="w-3.5 h-3.5 text-slate-500"></i>
+                                    {{ eq.faculty_in_charge }}
+                                </span>
+                                <span class="text-slate-500">{{ eq.total_bookings }} completed slots</span>
+                            </div>
+                        </div>
+
+                        <!-- Card Action Buttons -->
+                        <div class="mt-5 pt-3 border-t border-slate-800/60 flex items-center gap-2">
+                            <a href="{{ url_for('equipment_detail', equipment_id=eq.id) }}" class="flex-1 text-center py-2 px-3 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors">
+                                Details & Schedule
+                            </a>
+                            <a href="{{ url_for('book_equipment', equipment_id=eq.id) }}" class="flex-1 text-center py-2 px-3 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all">
+                                Request Slot
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-16 bg-slate-900/40 rounded-3xl border border-slate-800">
+                <i data-lucide="box" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
+                <h3 class="text-base font-bold text-white">No Equipment Found</h3>
+                <p class="text-xs text-slate-400 mt-1">Try adjusting your search terms or clearing department filters.</p>
+                <a href="{{ url_for('index') }}#catalog" class="mt-4 inline-block px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold">
+                    Show All Equipment
+                </a>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- GenAI Scheduling Feature Showcase Banner -->
+    <section class="rounded-3xl border border-indigo-500/20 bg-gradient-to-r from-indigo-950/40 via-slate-900 to-indigo-950/40 p-8 shadow-xl">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+            <div class="md:col-span-2 space-y-3">
+                <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-400 text-xs font-semibold border border-amber-500/20">
+                    <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                    <span>Smart Conflict Resolution In Action</span>
+                </div>
+                <h3 class="text-xl sm:text-2xl font-bold text-white">
+                    Fair, Automated Slot Allocation Based on Project Urgency
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    When multiple students request the same high-demand hardware during peak periods, LabLink's GenAI engine objectively computes priority metrics across <strong>project deadlines, research scope, and interdisciplinary fairness quotas</strong>, proposing instant viable alternatives with zero manual friction.
+                </p>
+            </div>
+
+            <div class="flex justify-end">
+                <a href="{{ url_for('admin_portal') }}" class="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/40 transition-all flex items-center gap-2">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    <span>Inspect Faculty Portal & Conflicts</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+</div>
+{% endblock %}

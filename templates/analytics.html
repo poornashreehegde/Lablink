@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+
+{% block title %}Laboratory Resource Utilisation Analytics — LabLink{% endblock %}
+
+{% block head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-6xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-semibold mb-2">
+                <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+                <span>Institutional Resource Intelligence</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                Equipment Utilisation & Cross-Department Sharing
+            </h1>
+            <p class="text-xs sm:text-sm text-slate-400">
+                Auditing resource efficiency, interdisciplinary democratization, and conflict resolution metrics
+            </p>
+        </div>
+
+        <div class="text-xs text-slate-400 font-mono bg-slate-900 px-3 py-2 rounded-xl border border-slate-800">
+            Live Campus Audit &bull; {{ current_year }}
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="glass-card rounded-2xl p-5 space-y-2">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Cross-Dept Sharing</span>
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                    <i data-lucide="share-2" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="text-2xl font-extrabold text-white">{{ cross_dept_pct }}%</div>
+            <p class="text-[11px] text-emerald-400 flex items-center gap-1">
+                <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+                High Interdisciplinary Access
+            </p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-5 space-y-2">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Shared Equipment</span>
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                    <i data-lucide="cpu" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="text-2xl font-extrabold text-white">{{ total_equipment }} Units</div>
+            <p class="text-[11px] text-slate-400">Across 5 Campus Departments</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-5 space-y-2">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Total Approved Sessions</span>
+                <div class="w-8 h-8 rounded-lg bg-violet-500/10 text-violet-400 flex items-center justify-center">
+                    <i data-lucide="calendar-check" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="text-2xl font-extrabold text-white">{{ total_approved }} Bookings</div>
+            <p class="text-[11px] text-slate-400">Out of {{ total_bookings }} total requests</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-5 space-y-2">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">GenAI Conflict Resolutions</span>
+                <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="text-2xl font-extrabold text-white">{{ total_conflicts }} Detected</div>
+            <p class="text-[11px] text-indigo-400">100% fair alternates identified</p>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Department Utilization Chart -->
+        <div class="glass-card rounded-3xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-white">Department Research Sessions Hosted</h3>
+                    <p class="text-[11px] text-slate-400">Volume of completed bookings per department</p>
+                </div>
+                <i data-lucide="bar-chart" class="w-4 h-4 text-indigo-400"></i>
+            </div>
+            <div class="h-64 relative">
+                <canvas id="deptChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Category Breakdown Chart -->
+        <div class="glass-card rounded-3xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-white">Equipment Category Demand Share</h3>
+                    <p class="text-[11px] text-slate-400">Distribution of campus research bookings</p>
+                </div>
+                <i data-lucide="pie-chart" class="w-4 h-4 text-violet-400"></i>
+            </div>
+            <div class="h-64 relative flex items-center justify-center">
+                <canvas id="catChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- High-Demand Hardware Leaderboard -->
+    <div class="glass-card rounded-3xl p-6 md:p-8 space-y-5">
+        <div>
+            <h3 class="text-base font-bold text-white">Top Utilised High-Value Campus Equipment</h3>
+            <p class="text-xs text-slate-400">Benchmarking equipment ROI and cross-faculty collaboration density</p>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                    <tr>
+                        <th class="px-4 py-3">Equipment</th>
+                        <th class="px-4 py-3">Category</th>
+                        <th class="px-4 py-3">Home Laboratory</th>
+                        <th class="px-4 py-3">Completed Sessions</th>
+                        <th class="px-4 py-3">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/80">
+                    {% for eq in top_equipment %}
+                        <tr class="hover:bg-slate-900/40">
+                            <td class="px-4 py-3">
+                                <div class="font-bold text-white">{{ eq.name }}</div>
+                                <div class="text-[10px] font-mono text-indigo-400">{{ eq.code }}</div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300">
+                                    {{ eq.category }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-slate-300">
+                                {{ eq.lab_name }} ({{ eq.department_name }})
+                            </td>
+                            <td class="px-4 py-3 font-mono font-bold text-white">
+                                {{ eq.total_bookings }} sessions
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold {% if eq.status == 'Available' %}bg-emerald-500/10 text-emerald-400{% else %}bg-amber-500/10 text-amber-400{% endif %}">
+                                    {{ eq.status }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize Department Bar Chart
+    const deptCtx = document.getElementById('deptChart').getContext('2d');
+    const deptLabels = {{ dept_stats.keys()|list|tojson }};
+    const deptValues = {{ dept_stats.values()|list|tojson }};
+
+    new Chart(deptCtx, {
+        type: 'bar',
+        data: {
+            labels: deptLabels,
+            datasets: [{
+                label: 'Sessions Hosted',
+                data: deptValues,
+                backgroundColor: 'rgba(99, 102, 241, 0.75)',
+                borderColor: 'rgba(99, 102, 241, 1)',
+                borderWidth: 1,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#94a3b8', font: { size: 10 } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 20 }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // Initialize Category Doughnut Chart
+    const catCtx = document.getElementById('catChart').getContext('2d');
+    const catLabels = {{ cat_stats.keys()|list|tojson }};
+    const catValues = {{ cat_stats.values()|list|tojson }};
+
+    new Chart(catCtx, {
+        type: 'doughnut',
+        data: {
+            labels: catLabels,
+            datasets: [{
+                data: catValues,
+                backgroundColor: [
+                    '#6366f1',
+                    '#10b981',
+                    '#f59e0b',
+                    '#ec4899',
+                    '#06b6d4',
+                    '#8b5cf6'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#cbd5e1', font: { size: 10 }, boxWidth: 12 }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
