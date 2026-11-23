@@ -50,3 +50,11 @@ backup_pre_correction/
 *~
 .DS_Store
 Thumbs.db
+# Additional secret files
+.env.*
+!.env.example
+
+# Test and coverage files
+.pytest_cache/
+.coverage
+htmlcov/
