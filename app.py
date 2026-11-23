@@ -21,10 +21,11 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'lablink-secure-campus-s
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-# SQLite database path
+# SQLite database path (supports DATABASE_URL / SQLALCHEMY_DATABASE_URI environment variable)
 instance_dir = os.path.join(os.path.dirname(__file__), 'instance')
 os.makedirs(instance_dir, exist_ok=True)
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(instance_dir, 'lablink.db')}"
+default_db_uri = f"sqlite:///{os.path.join(instance_dir, 'lablink.db')}"
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or os.environ.get('SQLALCHEMY_DATABASE_URI') or default_db_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
