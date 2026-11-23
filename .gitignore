@@ -32,7 +32,10 @@ venv.bak/
 # Database & SQLite files
 instance/
 *.sqlite3
+*.db
+*.db.bak
 *.db-journal
+backup_pre_correction/
 
 # Environment variables & secrets
 .env

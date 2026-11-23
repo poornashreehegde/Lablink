@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Users & Roles — LabLink{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-semibold mb-2">
+                <i data-lucide="users" class="w-3.5 h-3.5"></i>
+                <span>User Management</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white tracking-tight">Campus User Directory & Roles</h1>
+            <p class="text-xs text-slate-400">View registered students, verified faculty leads, and assign system permissions</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('admin_portal') }}" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors">
+                Back to Approvals
+            </a>
+            <a href="{{ url_for('admin_manage_equipment') }}" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-md shadow-indigo-600/30 transition-all">
+                Manage Equipment
+            </a>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="glass-card rounded-3xl p-6 md:p-8 space-y-4">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                    <tr>
+                        <th class="px-4 py-3">User</th>
+                        <th class="px-4 py-3">Role</th>
+                        <th class="px-4 py-3">Department & ID</th>
+                        <th class="px-4 py-3">Registered On</th>
+                        <th class="px-4 py-3 text-right">Update Role</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/80">
+                    {% for u in users %}
+                        <tr class="hover:bg-slate-900/40">
+                            <td class="px-4 py-3">
+                                <div class="font-bold text-white">{{ u.full_name }}</div>
+                                <div class="text-[11px] text-slate-400 font-mono">{{ u.username }} &bull; {{ u.email }}</div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider {% if u.role == 'admin' %}bg-rose-500/20 text-rose-300 border border-rose-500/30{% elif u.role == 'faculty' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% else %}bg-indigo-500/20 text-indigo-300 border border-indigo-500/30{% endif %}">
+                                    {{ u.role }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div>{{ u.department or 'N/A' }}</div>
+                                {% if u.student_id %}
+                                    <div class="text-[10px] font-mono text-slate-500">ID: {{ u.student_id }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-slate-400 font-mono text-[11px]">
+                                {{ u.created_at.strftime('%b %d, %Y') }}
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <form method="POST" action="{{ url_for('admin_update_user_role', user_id=u.id) }}" class="inline-flex items-center gap-2">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <select name="role" class="px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                                        <option value="student" {% if u.role == 'student' %}selected{% endif %}>Student</option>
+                                        <option value="faculty" {% if u.role == 'faculty' %}selected{% endif %}>Faculty</option>
+                                        <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Admin</option>
+                                    </select>
+                                    <button type="submit" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition-colors">
+                                        Save
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -8,45 +8,57 @@
     <!-- Header -->
     <div class="text-center space-y-3">
         <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-semibold">
-            <i data-lucide="sparkles" class="w-4 h-4 text-amber-400 animate-pulse"></i>
-            <span>Natural Language Equipment Matcher</span>
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+            <span>Natural Language Equipment Discovery</span>
         </div>
         <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
             GenAI Laboratory Equipment Advisor
         </h1>
         <p class="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
-            Not sure what instruments or development kits your project requires? Describe your abstract or experiments and our GenAI advisor will match campus facilities.
+            Describe your project abstract, experiment protocols, or compute requirements. The advisor analyzes campus research facilities to recommend the most suitable workstations.
         </p>
+
+        <!-- Status Indicator -->
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold {% if is_gemini_active %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}bg-slate-800 text-slate-300 border border-slate-700{% endif %}">
+            <span class="w-2 h-2 rounded-full {% if is_gemini_active %}bg-emerald-400 animate-pulse{% else %}bg-slate-400{% endif %}"></span>
+            {% if is_gemini_active %}
+                Live Google Gemini 1.5 Flash Connected
+            {% else %}
+                Heuristic Engine Active (Set <code class="text-indigo-400 font-mono">GEMINI_API_KEY</code> for live LLM)
+            {% endif %}
+        </div>
     </div>
 
     <!-- Search Form -->
     <form method="POST" action="{{ url_for('ai_advisor') }}" class="glass-card rounded-3xl p-6 md:p-8 space-y-4 shadow-xl">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">
-            Describe Your Project Abstract or Technical Needs
+            Project Abstract or Hardware Specifications Needed
         </label>
         
         <div class="relative">
-            <textarea name="query" rows="3" required placeholder="e.g., We are building an autonomous drone telemetry system that requires high-frequency signal integrity verification up to 4 GHz and FPGA hardware acceleration..." class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700/80 rounded-2xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 leading-relaxed font-sans">{{ query }}</textarea>
+            <textarea name="query" rows="3" maxlength="500" required placeholder="e.g., We are building an autonomous drone telemetry system that requires high-frequency signal integrity verification up to 4 GHz and FPGA hardware acceleration..." class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700/80 rounded-2xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 leading-relaxed font-sans">{{ query }}</textarea>
         </div>
 
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
             <!-- Sample Prompts -->
             <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
-                <span class="text-slate-500">Try:</span>
-                <button type="button" onclick="setQuery('Training a YOLO vision transformer for edge robotics')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 transition-colors">
-                    Edge Robotics
+                <span class="text-slate-500">Quick queries:</span>
+                <button type="button" onclick="setQuery('Training a YOLO vision transformer on GPU cluster')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 transition-colors">
+                    AI Vision GPU
                 </button>
-                <button type="button" onclick="setQuery('Debugging 2.4 GHz RF waveform noise and impedance')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 transition-colors">
+                <button type="button" onclick="setQuery('Debugging 2.4 GHz RF waveform impedance on oscilloscope')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 transition-colors">
                     RF Oscilloscope
                 </button>
-                <button type="button" onclick="setQuery('Rapid 3D prototype enclosure with carbon fiber PLA')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 transition-colors">
+                <button type="button" onclick="setQuery('3D printing rapid prototype enclosure with carbon fiber')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 transition-colors">
                     3D Printing
                 </button>
             </div>
 
             <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2">
                 <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
-                <span>Find Matched Hardware</span>
+                <span>Analyze Requirements</span>
             </button>
         </div>
     </form>
@@ -57,9 +69,9 @@
             <div class="flex items-center justify-between">
                 <h2 class="text-base font-bold text-white flex items-center gap-2">
                     <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
-                    <span>GenAI Matched Facilities ({{ recommendations|length }})</span>
+                    <span>Matched Facilities ({{ recommendations|length }})</span>
                 </h2>
-                <span class="text-xs text-slate-400">Ranked by Spec Relevance</span>
+                <span class="text-xs text-slate-400">Ranked by Technical Suitability</span>
             </div>
 
             <div class="grid grid-cols-1 gap-4">
@@ -91,7 +103,7 @@
 
                         <!-- Match Rationale -->
                         <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 space-y-1">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400 block">AI Match Rationale</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400 block">AI Technical Rationale</span>
                             <p class="leading-relaxed">{{ r.rationale }}</p>
                         </div>
 
@@ -103,7 +115,7 @@
                         <!-- Actions -->
                         <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-xs">
                             <span class="text-slate-400">
-                                Lab In-Charge: <strong>{{ eq.faculty_in_charge }}</strong>
+                                Faculty Supervisor: <strong>{{ eq.faculty_in_charge }}</strong>
                             </span>
 
                             <div class="flex items-center gap-2">
@@ -111,7 +123,7 @@
                                     View Full Specs
                                 </a>
                                 <a href="{{ url_for('book_equipment', equipment_id=eq.id) }}" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-md shadow-indigo-600/30 transition-all">
-                                    Book This Slot &rarr;
+                                    Request Slot &rarr;
                                 </a>
                             </div>
                         </div>
@@ -122,8 +134,10 @@
     {% elif query %}
         <div class="text-center py-12 bg-slate-900/40 rounded-3xl border border-slate-800">
             <i data-lucide="search-x" class="w-10 h-10 text-slate-600 mx-auto mb-2"></i>
-            <h3 class="text-sm font-bold text-white">No Equipment Matches Found</h3>
-            <p class="text-xs text-slate-400 mt-1">Try rewording your project requirements or mentioning specific technical domains (e.g. AI, FPGA, RF, 3D printing, Spectroscopy).</p>
+            <h3 class="text-sm font-bold text-white">No Direct Equipment Matches</h3>
+            <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                No university hardware directly matched your query. Try describing specific technical disciplines (e.g. GPU, FPGA, RF, Oscilloscope, 3D printing, or Spectrophotometry).
+            </p>
         </div>
     {% endif %}
 

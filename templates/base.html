@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}LabLink — Campus Laboratory Resource-Sharing Platform{% endblock %}</title>
     
     <!-- Google Fonts: Plus Jakarta Sans -->
@@ -50,7 +51,7 @@
 <body class="min-h-full flex flex-col bg-[#0b0f19] text-slate-200 antialiased selection:bg-indigo-500 selection:text-white">
 
     <!-- Top Navigation Bar -->
-    <header class="sticky top-0 z-40 backdrop-blur-xl bg-[#0b0f19]/80 border-b border-slate-800/80">
+    <header class="sticky top-0 z-40 backdrop-blur-xl bg-[#0b0f19]/85 border-b border-slate-800/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 gap-4">
                 
@@ -63,71 +64,104 @@
                         <div>
                             <span class="text-xl font-extrabold tracking-tight text-white flex items-center gap-1.5">
                                 Lab<span class="text-indigo-400">Link</span>
-                                <span class="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">GenAI</span>
+                                <span class="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Campus</span>
                             </span>
-                            <p class="text-[11px] text-slate-400 leading-none hidden sm:block">Campus Resource Sharing</p>
+                            <p class="text-[11px] text-slate-400 leading-none hidden sm:block">Specialized Resource Sharing</p>
                         </div>
                     </a>
                 </div>
 
                 <!-- Navigation Links -->
                 <nav class="hidden md:flex items-center gap-1">
-                    <a href="{{ url_for('index') }}" class="px-3.5 py-2 rounded-lg text-sm font-medium transition-colors {% if request.endpoint == 'index' %}bg-indigo-600/10 text-indigo-400 border border-indigo-500/20{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
-                        <span class="flex items-center gap-2">
-                            <i data-lucide="search" class="w-4 h-4"></i>
-                            Discover Equipment
+                    <a href="{{ url_for('index') }}" class="px-3 py-2 rounded-lg text-xs font-semibold transition-colors {% if request.endpoint == 'index' %}bg-indigo-600/15 text-indigo-400 border border-indigo-500/20{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
+                        <span class="flex items-center gap-1.5">
+                            <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                            Discover
                         </span>
                     </a>
                     
-                    <a href="{{ url_for('ai_advisor') }}" class="px-3.5 py-2 rounded-lg text-sm font-medium transition-colors {% if request.endpoint == 'ai_advisor' %}bg-indigo-600/10 text-indigo-400 border border-indigo-500/20{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
-                        <span class="flex items-center gap-2">
-                            <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+                    <a href="{{ url_for('ai_advisor') }}" class="px-3 py-2 rounded-lg text-xs font-semibold transition-colors {% if request.endpoint == 'ai_advisor' %}bg-indigo-600/15 text-indigo-400 border border-indigo-500/20{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
+                        <span class="flex items-center gap-1.5">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
                             AI Advisor
                         </span>
                     </a>
 
-                    <a href="{{ url_for('view_requests') }}" class="px-3.5 py-2 rounded-lg text-sm font-medium transition-colors {% if request.endpoint == 'view_requests' %}bg-indigo-600/10 text-indigo-400 border border-indigo-500/20{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
-                        <span class="flex items-center gap-2">
-                            <i data-lucide="clock" class="w-4 h-4"></i>
-                            My Requests
-                        </span>
-                    </a>
+                    {% if current_user %}
+                        <a href="{{ url_for('view_requests') }}" class="px-3 py-2 rounded-lg text-xs font-semibold transition-colors {% if request.endpoint == 'view_requests' %}bg-indigo-600/15 text-indigo-400 border border-indigo-500/20{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
+                            <span class="flex items-center gap-1.5">
+                                <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                                {% if current_user.is_student() %}My Requests{% else %}All Requests{% endif %}
+                            </span>
+                        </a>
 
-                    <a href="{{ url_for('admin_portal') }}" class="px-3.5 py-2 rounded-lg text-sm font-medium transition-colors {% if request.endpoint == 'admin_portal' %}bg-indigo-600/10 text-indigo-400 border border-indigo-500/20{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
-                        <span class="flex items-center gap-2">
-                            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
-                            Faculty Portal
-                            {% if global_conflict_count > 0 %}
-                                <span class="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse">
-                                    {{ global_conflict_count }} Conflict
+                        {% if current_user.is_faculty() %}
+                            <a href="{{ url_for('admin_portal') }}" class="px-3 py-2 rounded-lg text-xs font-semibold transition-colors {% if request.endpoint == 'admin_portal' %}bg-indigo-600/15 text-indigo-400 border border-indigo-500/20{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
+                                <span class="flex items-center gap-1.5">
+                                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                                    Approvals
+                                    {% if global_conflict_count > 0 %}
+                                        <span class="px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                            {{ global_conflict_count }}
+                                        </span>
+                                    {% elif global_pending_count > 0 %}
+                                        <span class="px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                                            {{ global_pending_count }}
+                                        </span>
+                                    {% endif %}
                                 </span>
-                            {% elif global_pending_count > 0 %}
-                                <span class="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-                                    {{ global_pending_count }}
-                                </span>
-                            {% endif %}
-                        </span>
-                    </a>
+                            </a>
+                        {% endif %}
 
-                    <a href="{{ url_for('analytics') }}" class="px-3.5 py-2 rounded-lg text-sm font-medium transition-colors {% if request.endpoint == 'analytics' %}bg-indigo-600/10 text-indigo-400 border border-indigo-500/20{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
-                        <span class="flex items-center gap-2">
-                            <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-                            Utilization
+                        {% if current_user.is_admin() %}
+                            <a href="{{ url_for('admin_manage_equipment') }}" class="px-3 py-2 rounded-lg text-xs font-semibold transition-colors {% if request.endpoint in ['admin_manage_equipment', 'admin_manage_users'] %}bg-indigo-600/15 text-indigo-400 border border-indigo-500/20{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
+                                <span class="flex items-center gap-1.5">
+                                    <i data-lucide="settings" class="w-3.5 h-3.5 text-violet-400"></i>
+                                    Admin
+                                </span>
+                            </a>
+                        {% endif %}
+                    {% endif %}
+
+                    <a href="{{ url_for('analytics') }}" class="px-3 py-2 rounded-lg text-xs font-semibold transition-colors {% if request.endpoint == 'analytics' %}bg-indigo-600/15 text-indigo-400 border border-indigo-500/20{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
+                        <span class="flex items-center gap-1.5">
+                            <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
+                            Analytics
                         </span>
                     </a>
                 </nav>
 
-                <!-- Action CTA & Quick Chat -->
+                <!-- User Profile & Authentication Actions -->
                 <div class="flex items-center gap-2.5">
-                    <button onclick="toggleAiDrawer()" class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20 transition-all">
+                    <button onclick="toggleAiDrawer()" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20 transition-all">
                         <i data-lucide="bot" class="w-3.5 h-3.5 text-indigo-400"></i>
                         <span>AI Assistant</span>
                     </button>
 
-                    <a href="{{ url_for('index') }}#catalog" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition-all hover:shadow-indigo-600/50">
-                        <i data-lucide="calendar-plus" class="w-4 h-4"></i>
-                        <span>Book Slot</span>
-                    </a>
+                    {% if current_user %}
+                        <!-- Current User Pill -->
+                        <div class="flex items-center gap-2 pl-2 border-l border-slate-800">
+                            <div class="text-right hidden sm:block">
+                                <span class="text-xs font-bold text-white block leading-none">{{ current_user.full_name }}</span>
+                                <span class="text-[10px] uppercase font-bold text-indigo-400">{{ current_user.role }}</span>
+                            </div>
+                            <div class="w-8 h-8 rounded-full bg-indigo-600/20 border border-indigo-500/40 text-indigo-300 flex items-center justify-center text-xs font-bold uppercase">
+                                {{ current_user.username[0] }}
+                            </div>
+                            <a href="{{ url_for('logout') }}" title="Sign Out" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800/80 transition-colors">
+                                <i data-lucide="log-out" class="w-4 h-4"></i>
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="flex items-center gap-2 pl-1">
+                            <a href="{{ url_for('login') }}" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+                                Sign In
+                            </a>
+                            <a href="{{ url_for('register') }}" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all">
+                                Register
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
 
             </div>
@@ -150,7 +184,7 @@
                             {% else %}
                                 <i data-lucide="info" class="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5"></i>
                             {% endif %}
-                            <div class="text-sm font-medium">{{ message }}</div>
+                            <div class="text-xs sm:text-sm font-medium">{{ message }}</div>
                         </div>
                         <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">
                             <i data-lucide="x" class="w-4 h-4"></i>
@@ -176,7 +210,7 @@
                         <i data-lucide="bot" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h4 class="text-xs font-bold text-white">LabLink GenAI Advisor</h4>
+                        <h4 class="text-xs font-bold text-white">LabLink Equipment Advisor</h4>
                         <span class="text-[10px] text-emerald-400 flex items-center gap-1">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
                             Online & Ready
@@ -191,14 +225,14 @@
             <!-- Messages Stream -->
             <div id="aiChatStream" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs min-h-[220px] max-h-[340px]">
                 <div class="bg-slate-800/80 border border-slate-700/50 rounded-xl p-3 text-slate-300">
-                    👋 Hi! Describe your student project or hardware requirements (e.g. <em>"Need to train a YOLO vision model"</em> or <em>"Measure 2.4GHz RF antenna signals"</em>) and I'll find the best available lab workstations!
+                    👋 Hi! Describe your student project or hardware requirements (e.g. <em>"Need to train a YOLO vision model"</em> or <em>"Measure 2.4GHz RF signals"</em>) and I'll find the best available lab workstations!
                 </div>
             </div>
 
             <!-- Input Form -->
             <div class="p-3 border-t border-slate-800 bg-slate-950/60">
                 <form id="aiChatForm" onsubmit="handleAiChatSubmit(event)" class="flex gap-2">
-                    <input type="text" id="aiChatInput" placeholder="Describe what you need to build..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+                    <input type="text" id="aiChatInput" maxlength="500" placeholder="Describe what you need to build..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
                     <button type="submit" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors flex items-center justify-center">
                         <i data-lucide="send" class="w-3.5 h-3.5"></i>
                     </button>
@@ -222,7 +256,7 @@
                     </div>
                     <div>
                         <p class="text-xs font-semibold text-slate-300">LabLink — Campus Laboratory Resource-Sharing Platform</p>
-                        <p class="text-[11px] text-slate-500">Powered by GenAI Fair Scheduling & Conflict Resolution Engine</p>
+                        <p class="text-[11px] text-slate-500">Operating Hours: 08:00 AM – 08:00 PM Daily &bull; Dual-mode AI Advisor</p>
                     </div>
                 </div>
 
@@ -231,7 +265,11 @@
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                         {{ global_total_equip }} Shared Facilities Active
                     </span>
-                    <a href="{{ url_for('admin_portal') }}" class="hover:text-indigo-400 transition-colors">Admin Login</a>
+                    {% if current_user and current_user.is_faculty() %}
+                        <a href="{{ url_for('admin_portal') }}" class="hover:text-indigo-400 transition-colors">Faculty Portal</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="hover:text-indigo-400 transition-colors">Faculty Login</a>
+                    {% endif %}
                     <a href="{{ url_for('analytics') }}" class="hover:text-indigo-400 transition-colors">Campus Stats</a>
                 </div>
             </div>
@@ -265,7 +303,7 @@
 
             const stream = document.getElementById('aiChatStream');
 
-            // Append user bubble
+            // User message bubble
             const userBubble = document.createElement('div');
             userBubble.className = 'bg-indigo-600/30 border border-indigo-500/40 rounded-xl p-2.5 text-indigo-100 ml-6 text-right';
             userBubble.textContent = msg;
@@ -276,7 +314,7 @@
             // Loading indicator
             const loadingBubble = document.createElement('div');
             loadingBubble.className = 'bg-slate-800/60 rounded-xl p-2.5 text-slate-400 flex items-center gap-2 mr-6';
-            loadingBubble.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-indigo-400"></i> AI matching equipment...`;
+            loadingBubble.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-indigo-400"></i> Matching laboratory facilities...`;
             stream.appendChild(loadingBubble);
             lucide.createIcons();
             stream.scrollTop = stream.scrollHeight;
@@ -284,11 +322,22 @@
             try {
                 const res = await fetch('/api/chat-advisor', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
                     body: JSON.stringify({message: msg})
                 });
                 const data = await res.json();
                 loadingBubble.remove();
+
+                if (data.error) {
+                    const errBubble = document.createElement('div');
+                    errBubble.className = 'bg-rose-500/20 text-rose-200 rounded-xl p-2.5 text-xs';
+                    errBubble.textContent = data.error;
+                    stream.appendChild(errBubble);
+                    return;
+                }
 
                 const replyBubble = document.createElement('div');
                 replyBubble.className = 'bg-slate-800/90 border border-slate-700/80 rounded-xl p-3 text-slate-200 mr-4 space-y-2';
@@ -309,7 +358,7 @@
                         </div>
                     `).join('');
                 } else {
-                    recsHtml = `<p class="text-[11px] text-slate-400">No direct equipment match found. Try describing your sensors, computation, or testing needs.</p>`;
+                    recsHtml = `<p class="text-[11px] text-slate-400">No direct equipment match found. Try specifying hardware needs (e.g. GPU, FPGA, RF, 3D printer, or Spectrophotometer).</p>`;
                 }
 
                 replyBubble.innerHTML = `<p class="font-medium text-slate-300">${data.reply}</p>${recsHtml}`;
@@ -320,7 +369,7 @@
                 loadingBubble.remove();
                 const errBubble = document.createElement('div');
                 errBubble.className = 'bg-rose-500/20 text-rose-200 rounded-xl p-2.5 text-xs';
-                errBubble.textContent = "Error fetching recommendations. Please try again.";
+                errBubble.textContent = "Service temporarily busy. Please try again.";
                 stream.appendChild(errBubble);
             }
         }
