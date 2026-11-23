@@ -17,7 +17,16 @@ from seed_data import seed_database
 app = Flask(__name__)
 
 # Security: Load secret key from environment variable
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'lablink-secure-campus-secret-key-2026')
+
+is_production = os.environ.get('APP_ENV') == 'production'
+secret_key = os.environ.get('SECRET_KEY')
+
+if is_production and not secret_key:
+    raise RuntimeError("SECRET_KEY must be configured in production.")
+
+app.config['SECRET_KEY'] = secret_key or 'local-development-secret-key'
+app.config['SESSION_COOKIE_SECURE'] = is_production
+
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
@@ -25,7 +34,24 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 instance_dir = os.path.join(os.path.dirname(__file__), 'instance')
 os.makedirs(instance_dir, exist_ok=True)
 default_db_uri = f"sqlite:///{os.path.join(instance_dir, 'lablink.db')}"
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or os.environ.get('SQLALCHEMY_DATABASE_URI') or default_db_uri
+
+database_url = (
+    os.environ.get('DATABASE_URL')
+    or os.environ.get('SQLALCHEMY_DATABASE_URI')
+    or default_db_uri
+)
+
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace(
+        'postgres://', 'postgresql+psycopg://', 1
+    )
+elif database_url.startswith('postgresql://'):
+    database_url = database_url.replace(
+        'postgresql://', 'postgresql+psycopg://', 1
+    )
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)

@@ -3,39 +3,87 @@ from datetime import date, timedelta
 from models import db, Department, Equipment, BookingRequest, User
 from ai_engine import calculate_priority_score, resolve_conflicts_and_recommend
 
+
 def run_migrations():
-    """Ensures database schema is updated non-destructively for existing SQLite database."""
-    # Ensure tables exist
+    """Creates tables and applies SQLite-specific migrations when needed."""
     db.create_all()
 
-    # Check and add missing columns dynamically
-    try:
-        engine = db.engine
-        with engine.connect() as conn:
-            # 1. Equipment table columns
-            equip_cols = [row[1] for row in conn.exec_driver_sql("PRAGMA table_info(equipment);").fetchall()]
-            if 'assigned_faculty_id' not in equip_cols:
-                conn.exec_driver_sql("ALTER TABLE equipment ADD COLUMN assigned_faculty_id INTEGER REFERENCES users(id);")
+    # Identify which database is currently being used
+    database_type = db.engine.dialect.name
 
-            # 2. BookingRequest table columns
-            req_cols = [row[1] for row in conn.exec_driver_sql("PRAGMA table_info(booking_requests);").fetchall()]
-            if 'user_id' not in req_cols:
-                conn.exec_driver_sql("ALTER TABLE booking_requests ADD COLUMN user_id INTEGER REFERENCES users(id);")
-            if 'was_conflict' not in req_cols:
-                conn.exec_driver_sql("ALTER TABLE booking_requests ADD COLUMN was_conflict BOOLEAN DEFAULT 0;")
-            if 'ai_alt_date' not in req_cols:
-                conn.exec_driver_sql("ALTER TABLE booking_requests ADD COLUMN ai_alt_date DATE;")
-            if 'ai_alt_start_time' not in req_cols:
-                conn.exec_driver_sql("ALTER TABLE booking_requests ADD COLUMN ai_alt_start_time VARCHAR(10);")
-            if 'ai_alt_end_time' not in req_cols:
-                conn.exec_driver_sql("ALTER TABLE booking_requests ADD COLUMN ai_alt_end_time VARCHAR(10);")
-            if 'ai_alt_duration' not in req_cols:
-                conn.exec_driver_sql("ALTER TABLE booking_requests ADD COLUMN ai_alt_duration INTEGER;")
-            if 'ai_alt_equipment_id' not in req_cols:
-                conn.exec_driver_sql("ALTER TABLE booking_requests ADD COLUMN ai_alt_equipment_id INTEGER REFERENCES equipment(id);")
-            conn.commit()
-    except Exception as e:
-        print(f"Migration note/warning: {e}")
+    # PostgreSQL: create_all() creates the current model schema.
+    # No SQLite PRAGMA migrations are required for a fresh database.
+    if database_type == 'postgresql':
+        print("PostgreSQL database initialized successfully.")
+        return
+
+    # SQLite: preserve existing migration behaviour
+    if database_type == 'sqlite':
+        try:
+            engine = db.engine
+
+            with engine.begin() as conn:
+                # Equipment table columns
+                equip_cols = [
+                    row[1] for row in
+                    conn.exec_driver_sql(
+                        "PRAGMA table_info(equipment);"
+                    ).fetchall()
+                ]
+
+                if 'assigned_faculty_id' not in equip_cols:
+                    conn.exec_driver_sql(
+                        "ALTER TABLE equipment ADD COLUMN "
+                        "assigned_faculty_id INTEGER REFERENCES users(id);"
+                    )
+
+                # BookingRequest table columns
+                req_cols = [
+                    row[1] for row in
+                    conn.exec_driver_sql(
+                        "PRAGMA table_info(booking_requests);"
+                    ).fetchall()
+                ]
+
+                migrations = {
+                    'user_id': (
+                        "ALTER TABLE booking_requests ADD COLUMN "
+                        "user_id INTEGER REFERENCES users(id);"
+                    ),
+                    'was_conflict': (
+                        "ALTER TABLE booking_requests ADD COLUMN "
+                        "was_conflict BOOLEAN DEFAULT 0;"
+                    ),
+                    'ai_alt_date': (
+                        "ALTER TABLE booking_requests ADD COLUMN "
+                        "ai_alt_date DATE;"
+                    ),
+                    'ai_alt_start_time': (
+                        "ALTER TABLE booking_requests ADD COLUMN "
+                        "ai_alt_start_time VARCHAR(10);"
+                    ),
+                    'ai_alt_end_time': (
+                        "ALTER TABLE booking_requests ADD COLUMN "
+                        "ai_alt_end_time VARCHAR(10);"
+                    ),
+                    'ai_alt_duration': (
+                        "ALTER TABLE booking_requests ADD COLUMN "
+                        "ai_alt_duration INTEGER;"
+                    ),
+                    'ai_alt_equipment_id': (
+                        "ALTER TABLE booking_requests ADD COLUMN "
+                        "ai_alt_equipment_id INTEGER REFERENCES equipment(id);"
+                    )
+                }
+
+                for column, sql in migrations.items():
+                    if column not in req_cols:
+                        conn.exec_driver_sql(sql)
+
+        except Exception as e:
+            raise RuntimeError(
+                f"SQLite database migration failed: {e}"
+            ) from e
 
 
 def seed_database():
